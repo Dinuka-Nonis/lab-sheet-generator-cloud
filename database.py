@@ -1,6 +1,6 @@
 """
 Database models for multi-user Lab Sheet Generator
-PostgreSQL with SQLAlchemy
+MySQL compatible for PythonAnywhere
 """
 
 from datetime import datetime
@@ -59,7 +59,7 @@ class User(Base):
             'student_id': self.student_id,
             'name': self.name,
             'email': self.email,
-            'created_at': self.created_at.isoformat(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
             'modules_count': len(self.modules),
             'schedules_count': len(self.schedules)
         }
@@ -201,21 +201,18 @@ class GenerationHistory(Base):
             'filename': self.filename,
             'generated_via': self.generated_via,
             'onedrive_link': self.onedrive_link,
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
 
-# Database initialization
+# Database initialization for MySQL (PythonAnywhere)
 def init_database(database_url=None):
-    """Initialize database."""
+    """Initialize MySQL database."""
     if database_url is None:
+        # PythonAnywhere MySQL format: mysql+mysqlconnector://username:password@username.mysql.pythonanywhere-services.com/username$dbname
         database_url = os.getenv('DATABASE_URL', 'sqlite:///labsheets.db')
     
-    # Fix Render's postgres:// to postgresql://
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    
-    engine = create_engine(database_url)
+    engine = create_engine(database_url, pool_recycle=280, pool_pre_ping=True)
     Base.metadata.create_all(engine)
     
     Session = sessionmaker(bind=engine)
@@ -226,9 +223,6 @@ def get_db_session():
     """Get database session."""
     database_url = os.getenv('DATABASE_URL', 'sqlite:///labsheets.db')
     
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    
-    engine = create_engine(database_url)
+    engine = create_engine(database_url, pool_recycle=280, pool_pre_ping=True)
     Session = sessionmaker(bind=engine)
     return Session()

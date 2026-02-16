@@ -1,8 +1,10 @@
 """
 Template manager for cloud service
+Includes Classic and SLIIT templates
 """
 
 from .classic import ClassicTemplate
+from .sliit import SLIITTemplate
 
 
 class TemplateManager:
@@ -10,7 +12,8 @@ class TemplateManager:
     
     def __init__(self):
         self.templates = {
-            'classic': ClassicTemplate()
+            'classic': ClassicTemplate(),
+            'sliit': SLIITTemplate()
         }
     
     def get_template(self, template_id='classic'):
