@@ -1,59 +1,53 @@
 """
-Database models for multi-user Lab Sheet Generator
-MySQL compatible for PythonAnywhere
+Database models for Lab Sheet Generator
+SQLite for PythonAnywhere (no plan upgrade needed!)
 """
 
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker, scoped_session
 import os
 import secrets
 import hashlib
 
 Base = declarative_base()
 
+# Global engine and session factory
+_engine = None
+_SessionFactory = None
+
 
 class User(Base):
-    """User model for authentication and profile."""
-    
     __tablename__ = 'users'
-    
+
     id = Column(Integer, primary_key=True)
     student_id = Column(String(50), unique=True, nullable=False, index=True)
     name = Column(String(200), nullable=False)
     email = Column(String(200), unique=True, nullable=False, index=True)
     password_hash = Column(String(256), nullable=False)
     api_key = Column(String(100), unique=True, nullable=False, index=True)
-    
+
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime)
-    
-    # Relationships
+
     modules = relationship('Module', back_populates='user', cascade='all, delete-orphan')
     schedules = relationship('Schedule', back_populates='user', cascade='all, delete-orphan')
     generation_history = relationship('GenerationHistory', back_populates='user', cascade='all, delete-orphan')
-    
-    def __repr__(self):
-        return f"<User {self.student_id} - {self.name}>"
-    
+
     @staticmethod
     def hash_password(password):
-        """Hash password with SHA-256."""
         return hashlib.sha256(password.encode()).hexdigest()
-    
+
     @staticmethod
     def generate_api_key():
-        """Generate secure API key."""
         return f"sk_{secrets.token_urlsafe(32)}"
-    
+
     def verify_password(self, password):
-        """Verify password against hash."""
         return self.password_hash == self.hash_password(password)
-    
+
     def to_dict(self):
-        """Convert to dictionary."""
         return {
             'id': self.id,
             'student_id': self.student_id,
@@ -66,13 +60,11 @@ class User(Base):
 
 
 class Module(Base):
-    """Module/Course configuration."""
-    
     __tablename__ = 'modules'
-    
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    
+
     code = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
     template = Column(String(50), default='classic')
@@ -80,19 +72,14 @@ class Module(Base):
     custom_sheet_type = Column(String(100))
     use_zero_padding = Column(Boolean, default=True)
     output_path = Column(String(500))
-    
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
+
     user = relationship('User', back_populates='modules')
     schedules = relationship('Schedule', back_populates='module', cascade='all, delete-orphan')
-    
-    def __repr__(self):
-        return f"<Module {self.code} - {self.name}>"
-    
+
     def to_dict(self):
-        """Convert to dictionary."""
         return {
             'id': self.id,
             'code': self.code,
@@ -106,48 +93,40 @@ class Module(Base):
 
 
 class Schedule(Base):
-    """Generation schedule."""
-    
     __tablename__ = 'schedules'
-    
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     module_id = Column(Integer, ForeignKey('modules.id'), nullable=False)
-    
-    day_of_week = Column(Integer, nullable=False)  # 0=Monday, 6=Sunday
-    lab_time = Column(String(10), nullable=False)  # HH:MM format
+
+    day_of_week = Column(Integer, nullable=False)
+    lab_time = Column(String(10), nullable=False)
     generate_before_minutes = Column(Integer, default=60)
-    
+
     current_practical_number = Column(Integer, default=1)
     auto_increment = Column(Boolean, default=True)
     use_zero_padding = Column(Boolean, default=True)
-    
-    status = Column(String(20), default='active')  # active, paused, disabled
-    skip_dates = Column(Text)  # JSON array of ISO dates
+
+    status = Column(String(20), default='active')
+    skip_dates = Column(Text)
     repeat_mode = Column(Boolean, default=False)
-    
+
     upload_to_onedrive = Column(Boolean, default=True)
     send_confirmation = Column(Boolean, default=True)
-    
+
     last_email_sent = Column(DateTime)
     last_generated_at = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
+
     user = relationship('User', back_populates='schedules')
     module = relationship('Module', back_populates='schedules')
-    
-    def __repr__(self):
-        return f"<Schedule {self.module.code if self.module else 'N/A'} - Day {self.day_of_week}>"
-    
+
     def get_day_name(self):
-        """Get day name."""
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         return days[self.day_of_week]
-    
+
     def to_dict(self):
-        """Convert to dictionary."""
         return {
             'id': self.id,
             'module_code': self.module.code if self.module else None,
@@ -169,31 +148,24 @@ class Schedule(Base):
 
 
 class GenerationHistory(Base):
-    """Track generation history."""
-    
     __tablename__ = 'generation_history'
-    
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    
+
     module_code = Column(String(50), nullable=False)
     practical_number = Column(Integer, nullable=False)
     filename = Column(String(500), nullable=False)
-    
-    generated_via = Column(String(50), default='email')  # email, manual, api
+
+    generated_via = Column(String(50), default='email')
     onedrive_link = Column(String(500))
     email_sent = Column(Boolean, default=False)
-    
+
     created_at = Column(DateTime, default=datetime.utcnow)
-    
-    # Relationships
+
     user = relationship('User', back_populates='generation_history')
-    
-    def __repr__(self):
-        return f"<Generation {self.filename}>"
-    
+
     def to_dict(self):
-        """Convert to dictionary."""
         return {
             'id': self.id,
             'module_code': self.module_code,
@@ -205,24 +177,49 @@ class GenerationHistory(Base):
         }
 
 
-# Database initialization for MySQL (PythonAnywhere)
-def init_database(database_url=None):
-    """Initialize MySQL database."""
-    if database_url is None:
-        # PythonAnywhere MySQL format: mysql+mysqlconnector://username:password@username.mysql.pythonanywhere-services.com/username$dbname
-        database_url = os.getenv('DATABASE_URL', 'sqlite:///labsheets.db')
-    
-    engine = create_engine(database_url, pool_recycle=280, pool_pre_ping=True)
-    Base.metadata.create_all(engine)
-    
-    Session = sessionmaker(bind=engine)
-    return Session()
+def _get_db_url():
+    """Get database URL — defaults to SQLite (no setup needed!)."""
+    url = os.getenv('DATABASE_URL', '')
+    if not url:
+        # Store the SQLite file in the project directory
+        project_dir = os.path.dirname(os.path.abspath(__file__))
+        db_path = os.path.join(project_dir, 'labsheets.db')
+        url = f'sqlite:///{db_path}'
+    return url
+
+
+def init_database():
+    """Create all tables. Called once on startup."""
+    global _engine, _SessionFactory
+
+    url = _get_db_url()
+
+    # SQLite needs check_same_thread=False for Flask multi-threading
+    connect_args = {}
+    if url.startswith('sqlite'):
+        connect_args = {'check_same_thread': False}
+
+    _engine = create_engine(
+        url,
+        connect_args=connect_args,
+        pool_recycle=280,
+        pool_pre_ping=True
+    )
+
+    Base.metadata.create_all(_engine)
+
+    # scoped_session is thread-safe — one session per thread
+    _SessionFactory = scoped_session(sessionmaker(bind=_engine))
+
+    import logging
+    logging.getLogger(__name__).info(f"Database ready: {url}")
 
 
 def get_db_session():
-    """Get database session."""
-    database_url = os.getenv('DATABASE_URL', 'sqlite:///labsheets.db')
-    
-    engine = create_engine(database_url, pool_recycle=280, pool_pre_ping=True)
-    Session = sessionmaker(bind=engine)
-    return Session()
+    """Return a thread-safe database session."""
+    global _engine, _SessionFactory
+
+    if _SessionFactory is None:
+        init_database()
+
+    return _SessionFactory()

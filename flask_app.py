@@ -1,35 +1,54 @@
 """
 WSGI configuration for PythonAnywhere
-This file tells PythonAnywhere how to run your Flask app
+Uses SQLite — no database plan needed!
+
+HOW TO USE THIS FILE:
+1. In PythonAnywhere → Web tab → click WSGI configuration file link
+2. DELETE everything in it
+3. PASTE this entire file
+4. Edit the 4 values marked with ← CHANGE THIS
+5. Click Save
+6. Click Reload on the Web tab
 """
 
 import sys
 import os
 
-# Add your project directory to the sys.path
-project_home = '/home/YOUR_USERNAME/labsheetgenerator'  # CHANGE THIS!
+# ── 1. Point to your project folder ──────────────────────────────────────────
+# Replace YOUR_USERNAME with your PythonAnywhere username
+project_home = '/home/YOUR_USERNAME/lab-sheet-cloud'   # ← CHANGE THIS
 if project_home not in sys.path:
     sys.path.insert(0, project_home)
 
-# Set environment variables
-os.environ['DATABASE_URL'] = 'mysql+mysqlconnector://YOUR_USERNAME:YOUR_PASSWORD@YOUR_USERNAME.mysql.pythonanywhere-services.com/YOUR_USERNAME$labsheets'
-os.environ['GMAIL_USER'] = 'your.email@gmail.com'  # CHANGE THIS!
-os.environ['GMAIL_APP_PASSWORD'] = 'your-app-password'  # CHANGE THIS!
-os.environ['SECRET_KEY'] = 'your-secret-key-here-make-it-random'  # CHANGE THIS!
-os.environ['BASE_URL'] = 'https://YOUR_USERNAME.pythonanywhere.com'  # CHANGE THIS!
+# ── 2. Environment variables ──────────────────────────────────────────────────
 
-# Optional: OneDrive settings (uncomment if using)
-# os.environ['ONEDRIVE_CLIENT_ID'] = 'your-client-id'
-# os.environ['ONEDRIVE_CLIENT_SECRET'] = 'your-client-secret'
-# os.environ['ONEDRIVE_REFRESH_TOKEN'] = 'your-refresh-token'
+# SQLite — stored as a file inside your project folder. No setup needed!
+os.environ['DATABASE_URL'] = f'sqlite:///{project_home}/labsheets.db'
 
-# Import your Flask app
-from app import app as application  # noqa
+# Your Gmail address (the one that sends emails TO students)
+os.environ['GMAIL_USER'] = 'your-email@gmail.com'          # ← CHANGE THIS
 
-# Initialize database on first run
+# Gmail App Password (16 chars, get from Google Account → Security → App passwords)
+os.environ['GMAIL_APP_PASSWORD'] = 'xxxx xxxx xxxx xxxx'   # ← CHANGE THIS
+
+# Random secret key — paste any long random string here
+os.environ['SECRET_KEY'] = 'change-this-to-any-long-random-string-abc123'  # ← CHANGE THIS
+
+# Your PythonAnywhere URL (replace YOUR_USERNAME)
+os.environ['BASE_URL'] = 'http://YOUR_USERNAME.pythonanywhere.com'   # ← CHANGE THIS
+
+# OneDrive — leave blank (optional feature)
+os.environ['ONEDRIVE_CLIENT_ID'] = ''
+os.environ['ONEDRIVE_CLIENT_SECRET'] = ''
+os.environ['ONEDRIVE_REFRESH_TOKEN'] = ''
+
+# ── 3. Load the Flask app ─────────────────────────────────────────────────────
+from app import app as application
+
+# ── 4. Create database tables on first run ────────────────────────────────────
 from database import init_database
 try:
     init_database()
-    print("Database initialized successfully")
+    print("Database ready!")
 except Exception as e:
-    print(f"Database initialization error: {e}")
+    print(f"DB init note: {e}")

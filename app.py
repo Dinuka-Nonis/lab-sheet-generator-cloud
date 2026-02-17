@@ -950,29 +950,34 @@ ERROR_PAGE = """
 
 
 # ============================================================================
-# MAIN APPLICATION STARTUP
+# SCHEDULER STARTUP — runs under both direct execution AND WSGI (PythonAnywhere)
 # ============================================================================
 
+def start_scheduler():
+    """Start the background scheduler if not already running."""
+    if not scheduler.running:
+        scheduler.add_job(
+            check_and_send_emails,
+            'interval',
+            minutes=15,
+            id='email_checker'
+        )
+        scheduler.start()
+        logger.info("=" * 60)
+        logger.info("Lab Sheet Generator Cloud Service V3.0")
+        logger.info("=" * 60)
+        logger.info(f"Email enabled: {email_manager.enabled}")
+        logger.info(f"OneDrive enabled: {onedrive_manager.enabled}")
+        logger.info("Scheduler: running every 15 minutes")
+        logger.info(f"Base URL: {BASE_URL}")
+        logger.info("=" * 60)
+
+
+# Start scheduler when module is loaded (works with WSGI)
+start_scheduler()
+
+
 if __name__ == '__main__':
-    # Start scheduler
-    scheduler.add_job(
-        check_and_send_emails,
-        'interval',
-        minutes=15,
-        id='email_checker'
-    )
-    scheduler.start()
-    
-    logger.info("=" * 60)
-    logger.info("Lab Sheet Generator Cloud Service V3.0")
-    logger.info("Multi-User System")
-    logger.info("=" * 60)
-    logger.info(f"Email enabled: {email_manager.enabled}")
-    logger.info(f"OneDrive enabled: {onedrive_manager.enabled}")
-    logger.info("Scheduler: Checking every 15 minutes")
-    logger.info(f"Base URL: {BASE_URL}")
-    logger.info("=" * 60)
-    
-    # Run Flask app
+    # Direct execution (local development)
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
