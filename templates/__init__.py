@@ -3,8 +3,8 @@ Template manager for cloud service
 Includes Classic and SLIIT templates
 """
 
-from .classic import ClassicTemplate
-from .sliit import SLIITTemplate
+from templates.classic import ClassicTemplate
+from templates.sliit import SLIITTemplate
 
 
 class TemplateManager:

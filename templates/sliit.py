@@ -2,7 +2,7 @@
 SLIIT Template - Professional university format
 """
 
-from .base import BaseTemplate
+from templates.base import BaseTemplate
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn

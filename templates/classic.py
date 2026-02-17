@@ -2,7 +2,7 @@
 Classic template - Simple and clean design
 """
 
-from .base import BaseTemplate
+from templates.base import BaseTemplate
 from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 

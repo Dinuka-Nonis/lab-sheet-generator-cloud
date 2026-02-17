@@ -6,7 +6,7 @@ Handles template-based document creation
 import os
 import tempfile
 from pathlib import Path
-from .templates import get_template_manager
+from templates import get_template_manager
 
 
 class DocumentGenerator:

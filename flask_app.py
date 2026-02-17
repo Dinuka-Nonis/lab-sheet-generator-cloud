@@ -1,54 +1,28 @@
-"""
-WSGI configuration for PythonAnywhere
-Uses SQLite — no database plan needed!
-
-HOW TO USE THIS FILE:
-1. In PythonAnywhere → Web tab → click WSGI configuration file link
-2. DELETE everything in it
-3. PASTE this entire file
-4. Edit the 4 values marked with ← CHANGE THIS
-5. Click Save
-6. Click Reload on the Web tab
-"""
-
 import sys
 import os
 
-# ── 1. Point to your project folder ──────────────────────────────────────────
-# Replace YOUR_USERNAME with your PythonAnywhere username
-project_home = '/home/DinukaNonis/lab-sheet-cloud'   # ← CHANGE THIS
+# ── Set path FIRST so every import below can find the modules ──
+project_home = '/home/DinukaNonis/lab-sheet-generator-cloud'
 if project_home not in sys.path:
     sys.path.insert(0, project_home)
 
-# ── 2. Environment variables ──────────────────────────────────────────────────
-
-# SQLite — stored as a file inside your project folder. No setup needed!
-os.environ['DATABASE_URL'] = f'sqlite:///{project_home}/labsheets.db'
-
-# Your Gmail address (the one that sends emails TO students)
-os.environ['GMAIL_USER'] = 'your-email@gmail.com'          # ← CHANGE THIS
-
-# Gmail App Password (16 chars, get from Google Account → Security → App passwords)
-os.environ['GMAIL_APP_PASSWORD'] = 'xxxx xxxx xxxx xxxx'   # ← CHANGE THIS
-
-# Random secret key — paste any long random string here
-os.environ['SECRET_KEY'] = 'change-this-to-any-long-random-string-abc123'  # ← CHANGE THIS
-
-# Your PythonAnywhere URL (replace YOUR_USERNAME)
-os.environ['BASE_URL'] = 'http://DinukaNonis.pythonanywhere.com'   # ← CHANGE THIS
-
-# OneDrive — leave blank (optional feature)
-os.environ['ONEDRIVE_CLIENT_ID'] = ''
+# ── Environment variables ──────────────────────────────────────
+os.environ['DATABASE_URL'] = 'sqlite:////home/DinukaNonis/lab-sheet-generator-cloud/labsheets.db'
+os.environ['GMAIL_USER']          = 'dinukanonis49@gmail.com'       # ← change this
+os.environ['GMAIL_APP_PASSWORD']  = 'apau nwur qsjd tkgg'        # ← change this
+os.environ['SECRET_KEY']          = 'a8f5k9d3j2h7g4s6l1m8n0p5q2w9e7r4t6y3u8i1o0'  # ← change this (anything)
+os.environ['BASE_URL']            = 'http://DinukaNonis.pythonanywhere.com'
+os.environ['ONEDRIVE_CLIENT_ID']     = ''
 os.environ['ONEDRIVE_CLIENT_SECRET'] = ''
 os.environ['ONEDRIVE_REFRESH_TOKEN'] = ''
 
-# ── 3. Load the Flask app ─────────────────────────────────────────────────────
+# ── Import app ─────────────────────────────────────────────────
 from app import app as application
 
-# ── 4. Create database tables on first run ────────────────────────────────────
+# ── Create DB tables on first run ─────────────────────────────
 from database import init_database
 try:
     init_database()
     print("Database ready!")
 except Exception as e:
-    print(f"DB init note: {e}")
+    print(f"DB init: {e}")
