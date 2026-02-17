@@ -16,7 +16,7 @@ import os
 
 # ── 1. Point to your project folder ──────────────────────────────────────────
 # Replace YOUR_USERNAME with your PythonAnywhere username
-project_home = '/home/YOUR_USERNAME/lab-sheet-cloud'   # ← CHANGE THIS
+project_home = '/home/DinukaNonis/lab-sheet-cloud'   # ← CHANGE THIS
 if project_home not in sys.path:
     sys.path.insert(0, project_home)
 
@@ -35,7 +35,7 @@ os.environ['GMAIL_APP_PASSWORD'] = 'xxxx xxxx xxxx xxxx'   # ← CHANGE THIS
 os.environ['SECRET_KEY'] = 'change-this-to-any-long-random-string-abc123'  # ← CHANGE THIS
 
 # Your PythonAnywhere URL (replace YOUR_USERNAME)
-os.environ['BASE_URL'] = 'http://YOUR_USERNAME.pythonanywhere.com'   # ← CHANGE THIS
+os.environ['BASE_URL'] = 'http://DinukaNonis.pythonanywhere.com'   # ← CHANGE THIS
 
 # OneDrive — leave blank (optional feature)
 os.environ['ONEDRIVE_CLIENT_ID'] = ''
