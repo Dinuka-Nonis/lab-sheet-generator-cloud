@@ -260,6 +260,79 @@ def get_profile():
     })
 
 
+@app.route('/api/test-email', methods=['POST'])
+@require_api_key
+def test_email():
+    """
+    Send a test notification email immediately for a given schedule.
+    Useful for testing before the scheduler fires.
+    """
+    try:
+        data = request.json or {}
+        schedule_id = data.get('schedule_id')
+
+        user = request.current_user
+        db = get_db_session()
+
+        try:
+            if schedule_id:
+                schedule = db.query(Schedule).filter_by(
+                    id=schedule_id, user_id=user.id
+                ).first()
+            else:
+                # Use first active schedule if no ID given
+                schedule = db.query(Schedule).filter_by(
+                    user_id=user.id, status='active'
+                ).first()
+
+            if not schedule:
+                return jsonify({'error': 'Schedule not found'}), 404
+
+            module = schedule.module
+
+            if not email_manager.enabled:
+                return jsonify({
+                    'error': 'Email is not configured on the server. '
+                             'Check GMAIL_USER and GMAIL_APP_PASSWORD in PythonAnywhere.'
+                }), 503
+
+            # Generate tokens
+            gen_token  = generate_token(user.id, schedule.id, 'generate')
+            skip_token = generate_token(user.id, schedule.id, 'skip')
+
+            success = email_manager.send_generation_email(
+                to_email=user.email,
+                student_name=user.name,
+                module_name=module.name,
+                module_code=module.code,
+                practical_number=schedule.current_practical_number,
+                day_name=schedule.get_day_name(),
+                lab_time=schedule.lab_time,
+                sheet_type=module.sheet_type,
+                generate_token=gen_token,
+                skip_token=skip_token,
+                base_url=BASE_URL
+            )
+
+            if success:
+                logger.info(f"Test email sent to {user.email} for {module.code}")
+                return jsonify({
+                    'success': True,
+                    'message': f'Test email sent to {user.email}',
+                    'module': module.code,
+                    'practical': schedule.current_practical_number
+                })
+            else:
+                return jsonify({'error': 'Email send failed — check server logs'}), 500
+
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"Test email error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 # ============================================================================
 # API ROUTES - MODULE MANAGEMENT
 # ============================================================================
