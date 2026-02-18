@@ -83,7 +83,8 @@ class EmailManager:
                 self._attach_file(msg, attachment_path)
             
             # Send email
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                server.starttls()
                 server.login(self.gmail_user, self.gmail_password)
                 server.send_message(msg)
             
