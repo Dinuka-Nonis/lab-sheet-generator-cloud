@@ -5,6 +5,7 @@ Sends emails via Gmail SMTP
 
 import os
 import smtplib
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -82,14 +83,26 @@ class EmailManager:
             if attachment_path and os.path.exists(attachment_path):
                 self._attach_file(msg, attachment_path)
             
-            # Send email
-            with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            # Send email via Gmail SMTP (port 587 works on PythonAnywhere free tier)
+            try:
+                server = smtplib.SMTP('smtp.gmail.com', 587, timeout=15)
                 server.starttls()
                 server.login(self.gmail_user, self.gmail_password)
                 server.send_message(msg)
-            
-            print(f"Email sent to {to_email}")
-            return True
+                server.quit()
+                
+                print(f"✅ Email sent successfully to {to_email}")
+                return True
+                
+            except smtplib.SMTPAuthenticationError:
+                print(f"❌ Gmail authentication failed — check GMAIL_USER and GMAIL_APP_PASSWORD")
+                return False
+            except smtplib.SMTPException as e:
+                print(f"❌ SMTP error: {e}")
+                return False
+            except socket.timeout:
+                print(f"❌ Email send timed out after 15s")
+                return False
             
         except Exception as e:
             print(f"Error sending email: {e}")
